@@ -8,13 +8,46 @@
 </head>
 <body>
   <h1>Hello, world!</h1>
+  <canvas id="draw"></canvas>
   <script>
 (async () => {
-    const wasm = fetch("build/main.wasm");
-    const { instance } =
-      await WebAssembly.instantiateStreaming(wasm, { imports: {} });
+  const wasm = fetch("build/main.wasm");
+  const { instance } =
+    await WebAssembly.instantiateStreaming(wasm, { imports: {
+      print: console.log,
+    } });
 
-    console.log(instance);
+  const canvas = document.getElementById("draw");
+  const ctx = canvas.getContext("2d");
+  ctx.webkitImageSmoothingEnabled = false;
+  ctx.mozImageSmoothingEnabled = false;
+  ctx.imageSmoothingEnabled = false;
+
+  canvas.width = (1 << 8);
+  canvas.height = (1 << 8);
+
+  console.log((canvas.width * canvas.height * 4) / (1 << 16));
+  instance.exports.draw(
+    instance.exports.__heap_base,
+    canvas.width,
+    canvas.height,
+  );
+
+  const img = new ImageData(
+    new Uint8ClampedArray(
+      instance.exports.memory.buffer,
+      instance.exports.__heap_base,
+      canvas.width * canvas.height * 4
+    ),
+    canvas.width,
+    canvas.height
+  );
+  console.log(img, instance);
+
+  ctx.putImageData(img, 0, 0);
+
+  // (function frame() {
+  // })();
 })()
 </script>
 </body>

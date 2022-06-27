@@ -1,19 +1,12 @@
 cd build
 
-clang \
-  --target=wasm32 \
-  -emit-llvm \
-  -c \
-  -S \
-  ../main.c
-
-llc \
-  -march=wasm32 \
-  -filetype=obj \
-  main.ll
-
-wasm-ld \
-  --no-entry \
-  --export-all \
-  -o main.wasm \
-  main.o
+ clang \
+   --target=wasm32 \
+   -O3 \
+   -flto \
+   -nostdlib \
+   -Wl,--no-entry \
+   -Wl,--export-all \
+   -Wl,--lto-O3 \
+   -o main.wasm \
+   ../main.c

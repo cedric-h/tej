@@ -1,20 +1,24 @@
 extern void print(int x);
+extern void putchar(char x);
 #include <stdint.h>
 #define BLOCK_SIZE (1 << 16)
 
-void draw(uint8_t *ptr, int width, int height) {
-  __builtin_wasm_memory_grow(0, (width * height * 4)/BLOCK_SIZE);
+static int pos_x = 0;
+static int pos_y = 0;
 
-  int i = 0;
-  for (int y = 0; y < height; y++)
-    for (int x = 0; x < width; x++) {
-      ptr[i++] = 188; /* red */
-      ptr[i++] = x^(1+y) * 255; /* green */
-      ptr[i++] = 188; /* blue */
-      ptr[i++] = 255;
-    }
+static struct {
+  int width, height, *pixels;
+} rendr;
+#define RENDR_PIXELS_LEN (rendr.width * rendr.height * 4)
+
+void init(int width, int height) {
+  __builtin_wasm_memory_grow(0, RENDR_PIXELS_LEN/BLOCK_SIZE);
 }
 
-int add(int a, int b) {
-  return a + b;
+void draw(uint8_t *ptr) {
+  __builtin_memset(rendr.pixels, 255, RENDR_PIXELS_LEN);
+}
+
+void keydown(char k) {
+  putchar(k);
 }

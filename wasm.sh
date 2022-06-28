@@ -2,7 +2,7 @@ cd build
 
 # doesn't seem to work in Chrome, rip
 
- clang \
+clang \
    --target=wasm32 \
    -mbulk-memory \
    -O3 \

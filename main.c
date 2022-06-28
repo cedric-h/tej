@@ -1,5 +1,7 @@
 extern void print(int x);
 extern void putchar(char x);
+extern float sin(float x);
+extern float cos(float x);
 extern unsigned char __heap_base;
 
 #define WASM_EXPORT __attribute__((visibility("default")))
@@ -18,7 +20,7 @@ static struct {
 } rendr;
 #define RENDR_PIXELS_LEN (rendr.width * rendr.height * 4)
 
-void WASM_EXPORT init(int width, int height) {
+int WASM_EXPORT init(int width, int height) {
 
   /* center the player */
   pos_x = width/2;
@@ -28,11 +30,13 @@ void WASM_EXPORT init(int width, int height) {
   {
     rendr.width = width;
     rendr.height = height;
-    rendr.pixels = (void *) &__heap_base;
+    rendr.pixels = (void *) &__heap_base + BLOCK_SIZE;
 
     /* make sure we have enough space for these pixels */
-    __builtin_wasm_memory_grow(0, RENDR_PIXELS_LEN/BLOCK_SIZE);
+    __builtin_wasm_memory_grow(0, 1+RENDR_PIXELS_LEN/BLOCK_SIZE);
   }
+
+  return rendr.pixels;
 }
 
 /* "static" functions are _internal_ and won't be exposed to JS */

@@ -23,6 +23,8 @@
     await WebAssembly.instantiateStreaming(wasm, { env: {
       print: console.log,
       putchar: x => console.log(String.fromCharCode(x)),
+      sin: Math.sin,
+      cos: Math.cos,
     } });
 
   const canvas = document.getElementById("draw");
@@ -35,13 +37,13 @@
   canvas.height = (1 << 8);
 
   /* TODO: call this again on resize? fullscreen canvas? */
-  instance.exports.init(canvas.width, canvas.height);
+  const pixels = instance.exports.init(canvas.width, canvas.height);
 
   /* make an image backed by the WASM module's memory */
   const img = new ImageData(
     new Uint8ClampedArray(
       instance.exports.memory.buffer,
-      instance.exports.__heap_base,
+      pixels,
       canvas.width * canvas.height * 4
     ),
     canvas.width,

@@ -282,26 +282,6 @@ void map_set(char *str) {
   } while (*str++);
 }
 
-void keydown(char k) {
-
-  int dx = 0, dy = 0;
-  if (k == 'w') dy --;
-  if (k == 's') dy ++;
-  if (k == 'a') dx --;
-  if (k == 'd') dx ++;
-  
-  if (dx == 0 && dy == 0) return;
-
-  MatchState ms = {0};
-  if (map_match(&ms, 'p'))
-    sprite_move(map[ms.x][ms.y], dx, dy);
-
-  ms = (MatchState) {0};
-  int hits = 0;
-  while (map_match(&ms, '+')) hits++;
-  print(hits);
-}
-
 static void render_tile(uint8_t tx, uint8_t ty) {
   char type = map[tx][ty]->type;
   for (int x = 0; x < 16; x++)

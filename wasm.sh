@@ -1,9 +1,7 @@
 cd build
 
 zig build-lib \
-  --export=init \
-  --export=keydown \
-  --export=draw \
+  -rdynamic \
   -dynamic -target wasm32-freestanding ../main.c
 
 #  clang \

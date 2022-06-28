@@ -2,6 +2,8 @@ extern void print(int x);
 extern void putchar(char x);
 extern unsigned char __heap_base;
 
+#define WASM_EXPORT __attribute__((visibility("default")))
+
 #include <stdint.h>
 #define BLOCK_SIZE (1 << 16)
 
@@ -16,7 +18,7 @@ static struct {
 } rendr;
 #define RENDR_PIXELS_LEN (rendr.width * rendr.height * 4)
 
-void init(int width, int height) {
+void WASM_EXPORT init(int width, int height) {
 
   /* center the player */
   pos_x = width/2;
@@ -41,7 +43,7 @@ static void draw_rect(int px, int py, int size, Pixel color) {
         rendr.pixels[y*rendr.width + x] = color;
 }
 
-void draw() {
+void WASM_EXPORT draw() {
   /* clear the screen */
   __builtin_memset(rendr.pixels, 255, RENDR_PIXELS_LEN);
 
@@ -53,7 +55,7 @@ void draw() {
   });
 }
 
-void keydown(char k) {
+void WASM_EXPORT keydown(char k) {
   if (k == 'w') pos_y -= 5;
   if (k == 's') pos_y += 5;
   if (k == 'a') pos_x -= 5;

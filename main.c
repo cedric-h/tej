@@ -82,11 +82,13 @@ void WASM_EXPORT draw(double dt) {
     .color.a = 255
   });
 
+  int ox = cos(player.rot)*7;
+  int oy = sin(player.rot)*7;
   draw_rect((DrawRect) {
-    .px = player.x,
-    .py = player.y,
-    .size_x =  5,
-    .size_y = 15,
+    .px = player.x     + ox,
+    .py = player.y - 5 + oy,
+    .size_x = 10,
+    .size_y =  5,
     .angle = player.rot,
     .color.r = 128,
     .color.g = 128,

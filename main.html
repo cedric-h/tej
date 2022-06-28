@@ -18,16 +18,12 @@
   <canvas id="draw"></canvas>
   <script>
 (async () => {
-  let memory;
-
   const wasm = fetch("build/main.wasm");
   const { instance } =
     await WebAssembly.instantiateStreaming(wasm, { env: {
       print: console.log,
       putchar: x => console.log(String.fromCharCode(x)),
-      grow: (_, amt) => memory.grow(amt),
     } });
-  memory = instance.exports.memory;
 
   const canvas = document.getElementById("draw");
   const ctx = canvas.getContext("2d");

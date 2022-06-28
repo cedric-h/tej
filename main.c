@@ -1,6 +1,5 @@
 extern void print(int x);
 extern void putchar(char x);
-extern void grow(int z, int x);
 extern unsigned char __heap_base;
 
 #include <stdint.h>
@@ -30,7 +29,7 @@ void init(int width, int height) {
     rendr.pixels = (void *) &__heap_base;
 
     /* make sure we have enough space for these pixels */
-    grow(0, RENDR_PIXELS_LEN/BLOCK_SIZE);
+    __builtin_wasm_memory_grow(0, RENDR_PIXELS_LEN/BLOCK_SIZE);
   }
 }
 

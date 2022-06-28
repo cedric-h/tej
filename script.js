@@ -56,7 +56,7 @@ setLegend({
 ................
 ................
     `,
-    'w': allOf("g", "#")
+    'w': allOf("#", "g")
 })
 
 let level = 0;
@@ -93,7 +93,6 @@ setPushables({ "p": ["#"] });
 
 setMap(levels[level]);
 
-let countMatches;
 onInput("up",      _ => getFirst("p").y -= 1);
 onInput("down",    _ => getFirst("p").y += 1);
 onInput("left",    _ => getFirst("p").x -= 1);

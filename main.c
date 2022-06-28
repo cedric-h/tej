@@ -3,7 +3,10 @@
 
 #define BLOCK_SIZE (1 << 16)
 extern void print(int i);
+extern void putchar(char c);
 extern unsigned char __heap_base;
+
+char temp_str[1 << 11];
 
 typedef struct { uint8_t r, g, b, a; } Color;
 static struct {
@@ -11,14 +14,6 @@ static struct {
   Color *pixels;
 } rendr;
 #define RENDR_PIXELS_LEN (rendr.width * rendr.height * 4)
-
-char *map_str = 
-  "bbbbbbbbbb\n"
-  "bp......gb\n"
-  "b....b...b\n"
-  "b.b#bg.#.b\n"
-  "b......b.b\n"
-  "bbbbbbbbbb\n";
 
 typedef struct Sprite Sprite;
 struct Sprite {
@@ -45,20 +40,21 @@ static Color char_color[255] = {
   ['8'] = {255,   0, 255, 255},
   ['.'] = {  0,   0,   0,   0}
 };
-static uint8_t char_solid[255] = {
-  ['p'] = 1,
-  ['b'] = 1,
-  ['#'] = 1,
-};
+
+static uint8_t char_solid[255] = {0};
+void solid_set(char c) { char_solid[c] = 1; }
 
 typedef struct { Color p[16][16]; } Bitmap;
-static Bitmap bitmap_from_str(char *str) {
+static Bitmap char_bitmap[255];
+void bitmap_set_from_str(char dest, char *str) {
   Bitmap ret = {0};
+
   if (str[1] == '\0') {
     for (int x = 0; x < 16; x++)
       for (int y = 0; y < 16; y++)
         ret.p[x][y] = char_color[*str];
-    return ret;
+    char_bitmap[dest] = ret;
+    return;
   }
 
   int tx = 0, ty = 0;
@@ -67,6 +63,7 @@ static Bitmap bitmap_from_str(char *str) {
       case '\n': ty++, tx = 0; break;
       case  '.': tx++;         break;
       case '\0':               break;
+      case  ' ':               break;
       default: {
         ret.p[tx][ty] = char_color[*str];
         tx++;
@@ -74,18 +71,21 @@ static Bitmap bitmap_from_str(char *str) {
     }
   } while (*str++);
 
-  return ret;
+  char_bitmap[dest] = ret;
+  return;
 }
 
-static Bitmap char_bitmap[255];
 typedef enum {
   PatternKind_Deep,
   PatternKind_Flat,
 } PatternKind;
-typedef struct { PatternKind kind; char *str; } Pattern;
-static Pattern char_pattern[255] = {
-  ['+'] = { PatternKind_Deep, "#g" },
-};
+typedef struct { PatternKind kind; char str[16]; } Pattern;
+static Pattern char_pattern[255] = {};
+void pattern_set(char dest, PatternKind kind, char *str) {
+  Pattern p = { kind };
+  for (int i = 0; str[i] && i < 16; i++) p.str[i] = str[i];
+  char_pattern[dest] = p;
+}
 
 typedef struct { char key, val; } CharPushAssoc;
 static CharPushAssoc char_push_assoc[1 << 7];
@@ -120,7 +120,7 @@ uint8_t spritestack_match(SpriteStack ss, char p) {
        order doesn't matter. */
     case PatternKind_Deep: {
       char *str = pat->str;
-      if (!str) tmp[0] = p, str = tmp;
+      if (!*str) tmp[0] = p, str = tmp;
 
       for (; *str; str++ ) {
         SpriteStack s = ss;
@@ -154,7 +154,11 @@ uint8_t spritestack_match(SpriteStack ss, char p) {
   return 0;
 }
 
+Sprite *map_index(uint8_t x, uint8_t y) { return map[x][y]; }
+
 typedef struct { uint8_t x, y, open; } MatchState;
+uint8_t map_match_x(MatchState *ms) { return ms->x; }
+uint8_t map_match_y(MatchState *ms) { return ms->y; }
 uint8_t map_match(MatchState *ms, char p) {
   if (ms->open) ms->x++;
   ms->open = 1;
@@ -257,75 +261,18 @@ void init(int width, int height) {
     /* rest for sprite pool */
     sprite_pool = mem;
   }
+}
 
-  char_push_assoc[char_push_assoc_count++] = (CharPushAssoc) {
-    .key = 'p',
-    .val = '#'
-  };
+void map_set(char *str) {
+  __builtin_memset(map, 0, sizeof(map));
 
-  char_bitmap['b'] = bitmap_from_str("0");
-  char_bitmap['p'] = bitmap_from_str(
-    "................\n"
-    "................\n"
-    ".......0000.....\n"
-    ".......04440....\n"
-    "......0444440...\n"
-    "......0444.43...\n"
-    "......04444433..\n"
-    ".......044440...\n"
-    "..00000444440...\n"
-    "..04444444440...\n"
-    "..04444444440...\n"
-    "...044444440....\n"
-    "....04444400....\n"
-    ".....00000......\n"
-    "......00.00.....\n"
-    "................\n"
-  );
-  char_bitmap['#'] = bitmap_from_str(
-    "................\n"
-    "................\n"
-    "................\n"
-    "......33333.....\n"
-    ".....3333333....\n"
-    "....333333333...\n"
-    "....333333333...\n"
-    "....333333333...\n"
-    "....333333333...\n"
-    "....333333333...\n"
-    "....333333333...\n"
-    ".....3333333....\n"
-    "......33333.....\n"
-    "................\n"
-    "................\n"
-    "................\n"
-  );
-  char_bitmap['g'] = bitmap_from_str(
-    "................\n"
-    "................\n"
-    "................\n"
-    "......44444.....\n"
-    ".....4444444....\n"
-    "....444444444...\n"
-    "....444444444...\n"
-    "....444444444...\n"
-    "....444444444...\n"
-    "....444444444...\n"
-    "....444444444...\n"
-    ".....4444444....\n"
-    "......44444.....\n"
-    "................\n"
-    "................\n"
-    "................\n"
-  );
-
-  char *str = map_str;
   int tx = 0, ty = 0;
   do {
     switch (*str) {
       case '\n': ty++, tx = 0; break;
       case  '.': tx++;         break;
       case '\0':               break;
+      case  ' ':               break;
       default: {
         map[tx][ty] = sprite_pool++;
         *map[tx][ty] = (Sprite) { .x = tx, .y = ty, .type = *str };

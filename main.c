@@ -1,7 +1,7 @@
 extern void print(int x);
 extern void putchar(char x);
-extern float sin(float x);
-extern float cos(float x);
+extern double sin(double x);
+extern double cos(double x);
 extern unsigned char __heap_base;
 
 #define WASM_EXPORT __attribute__((visibility("default")))
@@ -36,26 +36,48 @@ int WASM_EXPORT init(int width, int height) {
     __builtin_wasm_memory_grow(0, 1+RENDR_PIXELS_LEN/BLOCK_SIZE);
   }
 
-  return rendr.pixels;
+  return (int)rendr.pixels;
+}
+
+static void fill_pixel(int x, int y, Pixel color) {
+  if (x > 0 && x < rendr.width && y > 0 && y < rendr.height)
+    rendr.pixels[y*rendr.width + x] = color;
 }
 
 /* "static" functions are _internal_ and won't be exposed to JS */
-static void draw_rect(int px, int py, int size, Pixel color) {
-  for (int x = px-5; x < px+5; x++)
-    for (int y = py-5; y < py+5; y++)
-      if (x < rendr.width && y < rendr.height)
-        rendr.pixels[y*rendr.width + x] = color;
+typedef struct {
+  int px, py, size;
+  double angle;
+  Pixel color;
+} DrawRect;
+
+static void draw_rect(DrawRect dr) {
+  double cosangle = cos(dr.angle);
+  double sinangle = sin(dr.angle);
+  for (int x = 0; x < dr.size*2; x++)
+    for (int y = 0; y < dr.size*2; y++) {
+      double fx = cosangle * (x - dr.size) - (y - dr.size) * sinangle;
+      double fy = sinangle * (x - dr.size) + (y - dr.size) * cosangle;
+      fill_pixel(dr.px + (int)fx - dr.size,
+                 dr.py + (int)fy - dr.size,
+                 dr.color);
+    }
 }
 
-void WASM_EXPORT draw() {
-  /* clear the screen */
+void WASM_EXPORT draw(double dt) {
+  /* draw the background */
   __builtin_memset(rendr.pixels, 255, RENDR_PIXELS_LEN);
 
-  draw_rect(pos_x, pos_y, 10, (Pixel) {
-    .r = 128,
-    .g =  20,
-    .b = 128,
-    .a = 255
+  /* draw the player */
+  draw_rect((DrawRect) {
+    .px = pos_x,
+    .py = pos_y,
+    .size = 10,
+    .angle = dt * 0.001,
+    .color.r = 128,
+    .color.g =  20,
+    .color.b = 128,
+    .color.a = 255
   });
 }
 

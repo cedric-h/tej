@@ -53,16 +53,16 @@
   /* input handling */
   window.onkeydown = e => instance.exports.keydown(e.key.charCodeAt(0));
 
-  (function frame() {
+  (function frame(dt) {
     /* generate the pixels */
-    instance.exports.draw();
+    instance.exports.draw(dt);
 
     /* display 'em */
     ctx.putImageData(img, 0, 0);
 
     /* come back in 16ms */
     requestAnimationFrame(frame);
-  })();
+  })(0);
 })()
 </script>
 </body>

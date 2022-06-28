@@ -10,8 +10,9 @@ extern unsigned char __heap_base;
 #define BLOCK_SIZE (1 << 16)
 
 /* player stuff */
-static int pos_x = 0;
-static int pos_y = 0;
+static struct {
+  double x, y, rot;
+} player;
 
 typedef struct { uint8_t r, g, b, a; } Pixel;
 static struct {
@@ -23,8 +24,8 @@ static struct {
 int WASM_EXPORT init(int width, int height) {
 
   /* center the player */
-  pos_x = width/2;
-  pos_y = height/2;
+  player.x = width/2;
+  player.y = height/2;
 
   /* initialize the renderer */
   {
@@ -46,7 +47,7 @@ static void fill_pixel(int x, int y, Pixel color) {
 
 /* "static" functions are _internal_ and won't be exposed to JS */
 typedef struct {
-  int px, py, size;
+  int px, py, size_x, size_y;
   double angle;
   Pixel color;
 } DrawRect;
@@ -54,12 +55,12 @@ typedef struct {
 static void draw_rect(DrawRect dr) {
   double cosangle = cos(dr.angle);
   double sinangle = sin(dr.angle);
-  for (int x = 0; x < dr.size*2; x++)
-    for (int y = 0; y < dr.size*2; y++) {
-      double fx = cosangle * (x - dr.size) - (y - dr.size) * sinangle;
-      double fy = sinangle * (x - dr.size) + (y - dr.size) * cosangle;
-      fill_pixel(dr.px + (int)fx - dr.size,
-                 dr.py + (int)fy - dr.size,
+  for (int x = 0; x < dr.size_x*2; x++)
+    for (int y = 0; y < dr.size_y*2; y++) {
+      double fx = cosangle * (x - dr.size_x) - (y - dr.size_y) * sinangle;
+      double fy = sinangle * (x - dr.size_x) + (y - dr.size_y) * cosangle;
+      fill_pixel(dr.px + (int)fx - dr.size_x,
+                 dr.py + (int)fy - dr.size_y,
                  dr.color);
     }
 }
@@ -70,20 +71,34 @@ void WASM_EXPORT draw(double dt) {
 
   /* draw the player */
   draw_rect((DrawRect) {
-    .px = pos_x,
-    .py = pos_y,
-    .size = 10,
-    .angle = dt * 0.001,
+    .px = player.x,
+    .py = player.y,
+    .size_x = 10,
+    .size_y = 10,
+    .angle = player.rot,
     .color.r = 128,
     .color.g =  20,
+    .color.b = 128,
+    .color.a = 255
+  });
+
+  draw_rect((DrawRect) {
+    .px = player.x,
+    .py = player.y,
+    .size_x =  5,
+    .size_y = 15,
+    .angle = player.rot,
+    .color.r = 128,
+    .color.g = 128,
     .color.b = 128,
     .color.a = 255
   });
 }
 
 void WASM_EXPORT keydown(char k) {
-  if (k == 'w') pos_y -= 5;
-  if (k == 's') pos_y += 5;
-  if (k == 'a') pos_x -= 5;
-  if (k == 'd') pos_x += 5;
+  if (k == 'w') player.x += cos(player.rot)*2, player.y += sin(player.rot)*2;
+  if (k == 's') player.x -= cos(player.rot)*2, player.y -= sin(player.rot)*2;
+
+  if (k == 'a') player.rot -= 0.2;
+  if (k == 'd') player.rot += 0.2;
 }
